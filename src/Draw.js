@@ -10,7 +10,7 @@ import * as faceLandmarksDetection from "@tensorflow-models/face-landmarks-detec
 import Webcam from "react-webcam";
 import { bigMouth, elipse, lens } from "./core/drawMesh";
 
-const App = () => {
+const Draw = () => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -20,34 +20,14 @@ const App = () => {
       webcamRef.current.video,
       estimationConfig
     );
-    const canvasCtx = canvasRef.current.getContext("2d");
-
-    if (faces.length > 0) {
-      canvasCtx.clearRect(
-        0,
-        0,
-        canvasRef.current.width,
-        canvasRef.current.height
-      );
-      lens(canvasCtx, webcamRef.current.video, faces, tf);
-    }
-  };
-  const detection = async () => {
-    const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
-    const detectorConfig = {
-      runtime: "mediapipe", // or 'tfjs'
-      solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh",
-    };
-    const detector = await faceLandmarksDetection.createDetector(
-      model,
-      detectorConfig
-    );
-    setInterval(() => {
-      detect(detector);
-    }, 10);
+    const ctx = canvasRef.current.getContext("2d");
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    requestAnimationFrame(() => {
+      bigMouth(ctx, webcamRef.current.video, faces);
+    });
   };
 
-  useEffect(() => {
+  const runFaceMesh = async () => {
     if (
       typeof webcamRef.current !== "undefined" &&
       webcamRef.current !== null &&
@@ -65,12 +45,24 @@ const App = () => {
       // Set canvas width
       canvasRef.current.width = videoWidth;
       canvasRef.current.height = videoHeight;
-      detection();
+      const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
+      const detectorConfig = {
+        runtime: "mediapipe", // or 'tfjs'
+        solutionPath: "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh",
+      };
+      const detector = await faceLandmarksDetection.createDetector(
+        model,
+        detectorConfig
+      );
+      setInterval(() => {
+        detect(detector);
+      }, 1);
     }
-  }, []);
+  };
 
   return (
     <div className="App">
+      <button onClick={() => runFaceMesh()}>On</button>
       <Webcam
         ref={webcamRef}
         style={{
@@ -104,4 +96,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default Draw;
